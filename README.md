@@ -26,6 +26,12 @@ rewrite a JSON cache under Home Assistant's `www/` directory.
 `ha/packages/columbia_911.yaml` exposes both caches as `command_line`
 sensors; `ha/lovelace/columbia_911.yaml` renders the two-tab dashboard.
 
+`db/schema.sql` carries `COMMENT ON TABLE`/`COMMENT ON COLUMN` documentation
+for every column — in particular `geox`/`geoy`'s coordinate reference system
+(Missouri State Plane Central Zone, NAD83, US Survey Feet — ESRI:102697) and
+how `geom` relates to them (the `pyproj` transform to WGS84/EPSG:4326 done at
+fetch time). Visible via `\d+ fire_medical_calls` in `psql`, not just here.
+
 ## Prerequisites
 
 - PostgreSQL reachable as `localhost` **with the PostGIS extension
