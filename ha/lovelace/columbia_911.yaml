@@ -70,3 +70,11 @@ views:
           <tr><td colspan="3"><i>No calls in the last 24 hours</i></td></tr>
           {%- endif %}
           </table>
+
+  - title: Map
+    path: map
+    icon: mdi:map
+    type: panel
+    cards:
+      - type: custom:mandi-fire-medical-map-card
+        entity: sensor.columbia_911_fire_medical
