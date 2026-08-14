@@ -1,0 +1,34 @@
+# Columbia/Boone County 911 dispatch package
+#
+# Fire/medical data comes from ~/MANDI/columbia-911-fire-fetch.py -- a
+# host-side script run every 5 minutes by the columbia-911-fire-fetch.timer
+# systemd unit. It scrapes como.gov's fire dispatch CSV export, upserts into
+# the mandi_geo PostgreSQL/PostGIS database, and atomically writes
+# ~/homeassistant/config/www/columbia_911/fire_medical.json (a rolling 24h
+# window), already inside this container's bind-mounted /config.
+#
+# Police data has no ingestion script yet (Phase 2+) -- police.json is a
+# static placeholder (fetched_at: null, calls: []) so the dashboard's second
+# tab renders a clean "no data yet" state instead of a broken sensor.
+
+command_line:
+  - sensor:
+      name: "Columbia 911 Fire Medical"
+      unique_id: columbia_911_fire_medical
+      command: "cat /config/www/columbia_911/fire_medical.json"
+      scan_interval: 60
+      value_template: "{{ value_json.fetched_at }}"
+      json_attributes:
+        - fetched_at
+        - fetched_at_display
+        - calls
+  - sensor:
+      name: "Columbia 911 Police"
+      unique_id: columbia_911_police
+      command: "cat /config/www/columbia_911/police.json"
+      scan_interval: 60
+      value_template: "{{ value_json.fetched_at }}"
+      json_attributes:
+        - fetched_at
+        - fetched_at_display
+        - calls
