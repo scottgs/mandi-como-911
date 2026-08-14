@@ -2,10 +2,12 @@
 
 A Home Assistant panel showing Columbia/Boone County 911 dispatch activity:
 a "Near Real-time Fire/Medical" tab (clickable Google Maps address links,
-nature color-coded by category, an icon in front of each Nature value) and
-a "Delayed Police" tab (Columbia's police feed is officially ~6h delayed by
+nature color-coded by category, an icon in front of each Nature value), a
+"Delayed Police" tab (Columbia's police feed is officially ~6h delayed by
 city policy, so it's polled less often and shown accordingly; Type column
-also gets an icon, no color-coding on this tab).
+also gets an icon, no color-coding on this tab), and a "Map" tab
+(visualizing the last 12h of Fire/Medical calls as pins on an interactive
+map).
 
 Self-contained: this repo owns its own fetch scripts, PostgreSQL/PostGIS
 schema, systemd timers, and Home Assistant dashboard/package YAML. It can be
@@ -41,6 +43,22 @@ for every column — in particular `geox`/`geoy`'s coordinate reference system
 (Missouri State Plane Central Zone, NAD83, US Survey Feet — ESRI:102697) and
 how `geom` relates to them (the `pyproj` transform to WGS84/EPSG:4326 done at
 fetch time). Visible via `\d+ fire_medical_calls` in `psql`, not just here.
+
+## Map tab
+
+The Map tab displays Fire/Medical dispatch calls from the last 12 hours as pins
+on an interactive map. Police calls are excluded because the police feed
+contains no coordinates.
+
+The map is implemented as a custom Lovelace card (`custom_elements/fire-medical-map.js`)
+with Leaflet bundled directly (not a HACS dependency), allowing deployment to
+any Home Assistant instance without additional package management. Both `install.sh`
+and `uninstall.sh` handle the card's deployment and removal, including Lovelace
+resource registration in `configuration.yaml`.
+
+The custom card uses a ResizeObserver to ensure the map initializes correctly
+when rendered in Home Assistant's dynamically-sized dashboard tabs, preventing
+the Leaflet rendering bug where the map would lock onto a zero-sized container.
 
 ## Prerequisites
 
