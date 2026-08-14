@@ -142,7 +142,8 @@ def upsert_calls(conn, rows, fetched_at):
 RECENT_WINDOW = timedelta(hours=24)
 
 RECENT_QUERY = """
-SELECT in_num, call_datetime, address, nature, source_agency, patrol_area
+SELECT in_num, call_datetime, address, nature, source_agency, patrol_area,
+       ST_X(geom::geometry) AS lon, ST_Y(geom::geometry) AS lat
 FROM fire_medical_calls
 WHERE call_datetime >= %(since)s
 ORDER BY call_datetime DESC
@@ -240,6 +241,8 @@ def build_cache_payload(conn, now):
             "nature_icon": nature_icon(row["nature"]),
             "source_agency": row["source_agency"],
             "patrol_area": row["patrol_area"],
+            "lon": row["lon"],
+            "lat": row["lat"],
         })
     return {
         "fetched_at": now.isoformat(),
