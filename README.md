@@ -2,9 +2,10 @@
 
 A Home Assistant panel showing Columbia/Boone County 911 dispatch activity:
 a "Near Real-time Fire/Medical" tab (clickable Google Maps address links,
-nature color-coded by category) and a "Delayed Police" tab (Columbia's
-police feed is officially ~6h delayed by city policy, so it's polled less
-often and shown accordingly).
+nature color-coded by category, an icon in front of each Nature value) and
+a "Delayed Police" tab (Columbia's police feed is officially ~6h delayed by
+city policy, so it's polled less often and shown accordingly; Type column
+also gets an icon, no color-coding on this tab).
 
 Self-contained: this repo owns its own fetch scripts, PostgreSQL/PostGIS
 schema, systemd timers, and Home Assistant dashboard/package YAML. It can be
@@ -25,6 +26,15 @@ Both then query the last rolling 24h back out of the database and atomically
 rewrite a JSON cache under Home Assistant's `www/` directory.
 `ha/packages/columbia_911.yaml` exposes both caches as `command_line`
 sensors; `ha/lovelace/columbia_911.yaml` renders the two-tab dashboard.
+
+Each fetch script also computes a `nature_icon` per call — a substring
+keyword match against the `nature` text (e.g. `medical` → 🚑, `fire` → 🔥,
+`welfare` → ❤️, `traffic stop` → 🚓), checked most-specific-first so a
+narrow keyword like `carbon monoxide` or `welfare` is tried before a
+broader one (`alarm`, `check`) that would otherwise swallow it. The two
+scripts keep independent keyword lists — fire/medical's 12 keywords vs.
+police's 30 — since the two feeds' `nature` vocabularies barely overlap.
+A `nature` with no keyword match gets no icon rather than a guessed one.
 
 `db/schema.sql` carries `COMMENT ON TABLE`/`COMMENT ON COLUMN` documentation
 for every column — in particular `geox`/`geoy`'s coordinate reference system
