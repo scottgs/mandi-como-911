@@ -191,6 +191,40 @@ def classify_nature(nature):
     return None
 
 
+# Dashboard icon for the Nature column, shown in front of the text on the
+# fire/medical tab (not the color-coding categories above -- icons can be
+# more granular since they don't need to collapse to just 4 buckets).
+# Keyword substring match, same reasoning as NATURE_CATEGORY_KEYWORDS: a new
+# como.gov nature string following an existing naming convention (e.g. some
+# other "... Fire ..." label) still gets an icon. Checked in this order so
+# more specific keywords (e.g. "carbon monoxide") are tried before more
+# generic ones that would otherwise shadow them (e.g. bare "alarm").
+NATURE_ICON_KEYWORDS = [
+    ("carbon monoxide", "☠️"),   # toxic gas, distinct from a plain alarm
+    ("medical", "🚑"),
+    ("fire", "🔥"),              # covers "Fire Alarm" and "Vehicle Fire"
+    ("smoke", "💨"),
+    ("gas", "⛽"),                # "Gas Leak/Gas Odor"
+    ("electrical", "⚡"),
+    ("collision", "🚗"),         # "Motor Vehicle Collision" / "Vehicle Collision"
+    ("citizen", "🤝"),
+    ("service", "🤝"),           # "Citizen Assist/Service Call"
+    ("knox", "🔑"),              # Knox Box building access
+    ("unknown", "❓"),
+    ("alarm", "🔔"),             # generic/uncategorized alarm
+]
+
+
+def nature_icon(nature):
+    if not nature:
+        return ""
+    lowered = nature.lower()
+    for keyword, icon in NATURE_ICON_KEYWORDS:
+        if keyword in lowered:
+            return icon
+    return ""
+
+
 def build_cache_payload(conn, now):
     calls = []
     for row in query_recent(conn, now):
@@ -203,6 +237,7 @@ def build_cache_payload(conn, now):
             "address_maps_url": maps_url(row["address"]),
             "nature": row["nature"],
             "nature_category": classify_nature(row["nature"]),
+            "nature_icon": nature_icon(row["nature"]),
             "source_agency": row["source_agency"],
             "patrol_area": row["patrol_area"],
         })
