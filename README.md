@@ -50,7 +50,7 @@ The Map tab displays Fire/Medical dispatch calls from the last 12 hours as pins
 on an interactive map. Police calls are excluded because the police feed
 contains no coordinates.
 
-The map is implemented as a custom Lovelace card (`custom_elements/fire-medical-map.js`)
+The map is implemented as a custom Lovelace card (`ha/www/community/mandi-fire-medical-map/mandi-fire-medical-map-card.js`)
 with Leaflet bundled directly (not a HACS dependency), allowing deployment to
 any Home Assistant instance without additional package management. Both `install.sh`
 and `uninstall.sh` handle the card's deployment and removal, including Lovelace
