@@ -136,6 +136,56 @@ def maps_url(address):
     return f"https://www.google.com/maps/search/?api=1&query={query}"
 
 
+# Dashboard icon for the Type column, shown in front of the text. Same
+# design as columbia-911-fire-fetch.py's nature_icon(): substring keyword
+# match, checked most-specific-first so a narrower keyword (e.g. "welfare")
+# is tried before a broader one that would otherwise shadow it (e.g.
+# "check", which alone would swallow "CHECK THE WELFARE"). A nature with no
+# keyword match gets no icon rather than a forced generic one.
+NATURE_ICON_KEYWORDS = [
+    ("911", "📞"),          # "911 CHECKS"
+    ("animal", "🐾"),       # "ANIMAL COMPLAINT"
+    ("welfare", "❤️"),      # "CHECK THE WELFARE"
+    ("suspicious", "👀"),   # SUSPICIOUS PERSON/INCIDENT/VEHICLE
+    ("missing", "🔍"),      # "MISSING PERSON"
+    ("shots", "🔫"),        # "SHOTS HEARD"
+    ("assault", "👊"),
+    ("harassment", "🗣️"),
+    ("trespass", "🚫"),     # TRESPASS SUBJECT / TRESPASSING
+    ("vandalism", "🔨"),
+    ("burglary", "🚪"),
+    ("theft", "🔓"),        # "AUTO THEFT"
+    ("larceny", "💰"),
+    ("dwi", "🍺"),
+    ("accident", "💥"),     # ACCIDENT / LEAVING THE SCENE ACCIDENT
+    ("hazard", "⚠️"),       # "TRAFFIC HAZARD"
+    ("stop", "🚓"),         # "TRAFFIC STOP"
+    ("parking", "🅿️"),
+    ("repo", "🚗"),         # "VEH REPO"
+    ("vehicle", "🚗"),      # STALLED/ABANDONED VEHICLE (SUSPICIOUS VEHICLE already caught above)
+    ("control", "🚦"),      # "TRAFFIC CONTROL"
+    ("traffic", "🚦"),      # bare "TRAFFIC"
+    ("disturbance", "📢"),  # DISTURBANCE / PEACE DISTURBANCE
+    ("peace", "🕊️"),        # "KEEP THE PEACE" (after disturbance, see above)
+    ("alarm", "🔔"),        # "LAW ALARM"
+    ("assist", "🤝"),       # ASSIST CITIZEN/MEDICS/FIRE/OFFICER/OTHER AGENCY
+    ("civil", "⚖️"),        # "CIVIL MATTER"
+    ("recover", "📦"),      # "RECOVER PROPERTY"
+    ("patrol", "🚶"),       # "FOOT PATROL"
+    ("check", "🔍"),        # generic leftover: CHECK SUBJECT/AREA/OPEN BUSINESS
+]
+
+
+def nature_icon(nature):
+    if not nature:
+        return ""
+    lowered = nature.lower()
+    for keyword, icon in NATURE_ICON_KEYWORDS:
+        if keyword in lowered:
+            return icon
+    return ""
+
+
 def build_cache_payload(conn, now):
     calls = []
     for row in query_recent(conn, now):
@@ -147,6 +197,7 @@ def build_cache_payload(conn, now):
             "address": row["address"],
             "address_maps_url": maps_url(row["address"]),
             "nature": row["nature"],
+            "nature_icon": nature_icon(row["nature"]),
             "patrol_area": row["patrol_area"],
         })
     return {

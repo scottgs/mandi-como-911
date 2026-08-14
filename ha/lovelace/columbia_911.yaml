@@ -62,7 +62,7 @@ views:
           {%- for c in calls %}
           <tr>
           <td>{{ c.call_time_display }}</td>
-          <td>{{ c.nature }}</td>
+          <td>{% if c.nature_icon %}{{ c.nature_icon }} {% endif %}{{ c.nature }}</td>
           <td>{% if c.address_maps_url %}<a href="{{ c.address_maps_url }}" target="_blank">{{ c.address }}</a>{% else %}{{ c.address }}{% endif %}</td>
           </tr>
           {%- endfor %}
