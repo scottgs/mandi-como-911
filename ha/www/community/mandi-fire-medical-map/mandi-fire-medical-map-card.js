@@ -62,12 +62,18 @@ class MandiFireMedicalMapCard extends HTMLElement {
       }).addTo(this._map);
       this._markersLayer = window.L.layerGroup().addTo(this._map);
 
-      const resizeObserver = new ResizeObserver(() => {
+      this._resizeObserver = new ResizeObserver(() => {
         this._map.invalidateSize();
       });
-      resizeObserver.observe(this._mapEl);
+      this._resizeObserver.observe(this._mapEl);
     });
     return this._initPromise;
+  }
+
+  disconnectedCallback() {
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+    }
   }
 
   _render() {
