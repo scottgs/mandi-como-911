@@ -300,7 +300,7 @@ customElements.define("mandi-fire-medical-map-card", MandiFireMedicalMapCard);
 ```bash
 node --check ha/www/community/mandi-fire-medical-map/mandi-fire-medical-map-card.js && echo OK
 ```
-Expected: `OK`. If `node` isn't installed on srs9, fall back to
+Expected: `OK`. If `node` isn't installed on server_name, fall back to
 `python3 -c "import subprocess; ..."` isn't applicable for JS — instead visually re-read
 the file for balanced braces/parens before proceeding, and let Task 6's real-browser load
 be the actual syntax proof (a JS syntax error surfaces immediately as a console error
@@ -468,7 +468,7 @@ git commit -m "install.sh/uninstall.sh: deploy the fire/medical map card and reg
 
 ---
 
-### Task 6: Deploy to the live srs9 install and verify
+### Task 6: Deploy to the live server_name install and verify
 
 **Files:** none (deployment only — copies already-committed repo files onto the live host)
 

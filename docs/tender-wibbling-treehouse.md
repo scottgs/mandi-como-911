@@ -13,7 +13,7 @@ this planning session:
 - Back it with real **PostgreSQL + PostGIS**, not SQLite — this data is
   genuinely spatial (per-call coordinates, future proximity/heatmap-style
   queries) in a way COU Flights never was.
-- **Install PostgreSQL natively on srs9** (not in a Docker container, unlike
+- **Install PostgreSQL natively on server_name** (not in a Docker container, unlike
   every other service on this box) — latest stable major, PostGIS added as
   its own separate install step on top.
 - **Allow LAN connections**, not localhost-only — this instance is meant to
@@ -56,7 +56,7 @@ some open questions from the original spec:
   `Start_Date`/`End_Date` to the CSV export didn't change the result, so
   there's no broader backfill available this way — each poll only ever sees
   today's calls up to now, which is fine since every poll upserts.
-- srs9's LAN is `192.168.68.0/22` (interface `enp5s0`, address
+- server_name's LAN is `192.168.68.0/22` (interface `enp5s0`, address
   `192.168.68.101`). The host firewall is currently open (`ufw` inactive;
   the live `nftables` ruleset's `INPUT` chain policy is `accept`, with
   Tailscale-specific rules layered on top) — so no firewall changes are
@@ -65,7 +65,7 @@ some open questions from the original spec:
 
 ## What this phase builds
 
-1. **Native PostgreSQL 18 + PostGIS**, installed directly on srs9 via `apt`
+1. **Native PostgreSQL 18 + PostGIS**, installed directly on server_name via `apt`
    (Ubuntu 26.04 "Resolute Raccoon" ships PostgreSQL 18 and
    `postgresql-18-postgis-3` directly in its own archive — no PGDG repo
    needed), configured to accept authenticated connections from the LAN.
@@ -93,7 +93,7 @@ some open questions from the original spec:
 - **Resource posture — generous, since this is meant to be general-purpose
   geospatial analytics infrastructure**, not container `mem_limit`/`cpus`
   (there's no container now) but `postgresql.conf` tuning, reflecting real
-  headroom on srs9 (16 logical cores, ~23Gi available of 30Gi total):
+  headroom on server_name (16 logical cores, ~23Gi available of 30Gi total):
   - `shared_buffers = 4GB`
   - `effective_cache_size = 12GB`
   - `work_mem = 64MB`
@@ -121,7 +121,7 @@ some open questions from the original spec:
   after the role/database are created.
 - **Worth flagging explicitly:** this opens TCP 5432 to the entire home LAN
   with password auth — a real, if modest, change to this host's network
-  exposure (everything else on srs9 either binds to `localhost` or is
+  exposure (everything else on server_name either binds to `localhost` or is
   Tailscale-only). Reasonable given the stated intent (LAN-reachable
   analytics DB), just flagging it as a deliberate tradeoff, not a default.
 
@@ -197,7 +197,7 @@ CREATE INDEX police_calls_call_datetime_idx ON police_calls (call_datetime DESC)
 - **Upsert:** one `INSERT ... ON CONFLICT (in_num) DO UPDATE` per row
   against `fire_medical_calls`.
 - **Connection:** connects to Postgres over `localhost` (the script runs on
-  srs9 itself — no reason to route its own traffic through the LAN-facing
+  server_name itself — no reason to route its own traffic through the LAN-facing
   listener) using the dedicated role's credentials.
 - **Systemd timer:** `columbia-911-fire-fetch.timer` / `.service`, modeled
   directly on the existing

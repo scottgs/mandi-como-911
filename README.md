@@ -79,7 +79,7 @@ the Leaflet rendering bug where the map would lock onto a zero-sized container.
 
 ```
 ./install.sh <install-user> <repo-dir> <ha-config-dir>
-# e.g. on srs9 itself:
+# e.g. on server_name itself:
 ./install.sh scottgs /home/scottgs/repos/mandi-como-911 /home/scottgs/homeassistant/config
 ```
 

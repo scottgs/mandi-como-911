@@ -93,7 +93,7 @@ All changes live in `mandi-como-911`:
 2. Load the new Map tab in a real, logged-in browser session and visually confirm pin
    placement, popup content, and the empty-state message (using a temporarily-narrowed
    window if there happen to be zero calls in the real last-12h at test time). Note: the
-   headless Playwright browser on srs9 has no color-emoji font installed (established
+   headless Playwright browser on server_name has no color-emoji font installed (established
    during the Nature-column icon work) — pin *positions* and popup *text* can be verified
    visually there, but the *emoji glyphs themselves* rendering correctly needs a real
    end-user browser, same caveat as before.
