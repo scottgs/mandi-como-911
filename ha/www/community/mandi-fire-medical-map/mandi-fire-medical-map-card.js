@@ -4,7 +4,7 @@ const LEAFLET_CSS_URL = "/local/community/mandi-fire-medical-map/leaflet.css";
 // (HA's own configured home location) at render time.
 const COLUMBIA_MO = [38.9517, -92.3341];
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
-const HOME_VIEW_MILES_ACROSS = 20;
+const HOME_VIEW_MILES_ACROSS = 8;
 const MILES_PER_DEGREE_LAT = 69.0;
 
 // Bounding box roughly `milesAcross` x `milesAcross`, centered on [lat, lon].
@@ -98,7 +98,7 @@ class MandiFireMedicalMapCard extends HTMLElement {
       // (integer-only zoom) rounds fitBounds *down* to guarantee the whole
       // box stays visible, which can nearly double the shown area versus
       // what was actually requested. Fractional zoom lets it match the
-      // requested ~20mi box tightly (tiles render very slightly upscaled
+      // requested HOME_VIEW_MILES_ACROSS box tightly (tiles render very slightly upscaled
       // between integer levels, which is standard and not visually
       // noticeable at this scale).
       this._map = window.L.map(this._mapEl, { zoomSnap: 0 });
@@ -108,6 +108,20 @@ class MandiFireMedicalMapCard extends HTMLElement {
         maxZoom: 19,
       }).addTo(this._map);
       this._markersLayer = window.L.layerGroup().addTo(this._map);
+
+      // Static home marker -- on its own layer, never touched by
+      // _render()'s markersLayer.clearLayers(), so it persists unchanged
+      // across every data refresh. Popup deliberately says only "Home", not
+      // the street address -- this repo is public on GitHub.
+      window.L.marker([homeLat, homeLon], {
+        icon: window.L.divIcon({
+          html: `<div style="font-size: 26px; line-height: 1;">🏠</div>`,
+          className: "mandi-home-marker",
+          iconSize: [28, 28],
+        }),
+      })
+        .bindPopup("<b>🏠 Home</b>")
+        .addTo(this._map);
 
       this._resizeObserver = new ResizeObserver(() => {
         this._map.invalidateSize();
@@ -192,10 +206,11 @@ class MandiFireMedicalMapCard extends HTMLElement {
       );
       marker.addTo(this._markersLayer);
     }
-    // Viewport intentionally stays fixed on the ~20mi home-centered view set
-    // once in _init() -- markers render wherever they are (even off-screen,
-    // for a call outside that box), but data refreshes never move the map
-    // out from under a user who has manually panned/zoomed.
+    // Viewport intentionally stays fixed on the home-centered view set once
+    // in _init() (see HOME_VIEW_MILES_ACROSS) -- markers render wherever
+    // they are (even off-screen, for a call outside that box), but data
+    // refreshes never move the map out from under a user who has manually
+    // panned/zoomed.
   }
 }
 
