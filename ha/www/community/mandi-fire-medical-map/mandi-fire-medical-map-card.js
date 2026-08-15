@@ -3,17 +3,11 @@ const LEAFLET_CSS_URL = "/local/community/mandi-fire-medical-map/leaflet.css";
 const COLUMBIA_MO = [38.9517, -92.3341];
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 
-function ensureLeafletLoaded() {
+function ensureLeafletScriptLoaded() {
   if (window.L) return Promise.resolve();
   if (window.__mandiLeafletLoading) return window.__mandiLeafletLoading;
 
   window.__mandiLeafletLoading = new Promise((resolve, reject) => {
-    if (!document.querySelector(`link[href="${LEAFLET_CSS_URL}"]`)) {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = LEAFLET_CSS_URL;
-      document.head.appendChild(link);
-    }
     const script = document.createElement("script");
     script.src = LEAFLET_JS_URL;
     script.onload = () => resolve();
@@ -46,8 +40,9 @@ class MandiFireMedicalMapCard extends HTMLElement {
 
   _init() {
     if (this._initPromise) return this._initPromise;
-    this._initPromise = ensureLeafletLoaded().then(() => {
+    this._initPromise = ensureLeafletScriptLoaded().then(async () => {
       this.innerHTML = `
+        <link rel="stylesheet" href="${LEAFLET_CSS_URL}">
         <ha-card>
           <div class="mandi-map-header" style="padding: 8px 16px; font-size: 0.9em; color: var(--secondary-text-color);"></div>
           <div class="mandi-map" style="height: 500px;"></div>
@@ -55,6 +50,17 @@ class MandiFireMedicalMapCard extends HTMLElement {
       `;
       this._headerEl = this.querySelector(".mandi-map-header");
       this._mapEl = this.querySelector(".mandi-map");
+
+      const cssLink = this.querySelector('link[rel="stylesheet"]');
+      await new Promise((resolve) => {
+        if (cssLink.sheet) {
+          resolve();
+        } else {
+          cssLink.onload = () => resolve();
+          cssLink.onerror = () => resolve(); // don't hang forever if the stylesheet fails to load; map still renders, just visually degraded
+        }
+      });
+
       this._map = window.L.map(this._mapEl).setView(COLUMBIA_MO, 12);
       window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap contributors",
