@@ -36,6 +36,26 @@ SQL
   echo "mandi_geo database provisioned (or already present -- schema.sql is idempotent)"
 }
 
+register_lovelace_resource() {
+  local ha_config_dir="$1"
+  local resource_url="$2"
+  python3 - "${ha_config_dir}/.storage/lovelace_resources" "$resource_url" <<'PYEOF'
+import json, sys, uuid
+
+path, url = sys.argv[1], sys.argv[2]
+with open(path) as f:
+    data = json.load(f)
+items = data["data"]["items"]
+if any(i["url"] == url for i in items):
+    print(f"lovelace resource already registered: {url}")
+else:
+    items.append({"id": uuid.uuid4().hex, "url": url, "type": "module"})
+    with open(path, "w") as f:
+        json.dump(data, f)
+    print(f"registered lovelace resource: {url}")
+PYEOF
+}
+
 echo "== 1/5: env file =="
 sudo install -d -m 0755 /etc/mandi
 if [ ! -f /etc/mandi/como-911.env ]; then
@@ -69,6 +89,12 @@ echo "== 4/5: HA dashboard + package files =="
 mkdir -p "${HA_CONFIG_DIR}/www/columbia_911"
 cp "$SCRIPT_DIR/ha/lovelace/columbia_911.yaml" "${HA_CONFIG_DIR}/lovelace/columbia_911.yaml"
 cp "$SCRIPT_DIR/ha/packages/columbia_911.yaml" "${HA_CONFIG_DIR}/packages/columbia_911.yaml"
+
+echo "== 4b/5: fire/medical map card =="
+mkdir -p "${HA_CONFIG_DIR}/www/community/mandi-fire-medical-map"
+cp "$SCRIPT_DIR/ha/www/community/mandi-fire-medical-map/"*.js "$SCRIPT_DIR/ha/www/community/mandi-fire-medical-map/"*.css \
+  "${HA_CONFIG_DIR}/www/community/mandi-fire-medical-map/"
+register_lovelace_resource "${HA_CONFIG_DIR}" "/local/community/mandi-fire-medical-map/mandi-fire-medical-map-card.js"
 
 echo "== 5/5: manual step reminder =="
 cat <<'EOF'

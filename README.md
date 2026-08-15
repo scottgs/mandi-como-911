@@ -2,10 +2,12 @@
 
 A Home Assistant panel showing Columbia/Boone County 911 dispatch activity:
 a "Near Real-time Fire/Medical" tab (clickable Google Maps address links,
-nature color-coded by category, an icon in front of each Nature value) and
-a "Delayed Police" tab (Columbia's police feed is officially ~6h delayed by
+nature color-coded by category, an icon in front of each Nature value), a
+"Delayed Police" tab (Columbia's police feed is officially ~6h delayed by
 city policy, so it's polled less often and shown accordingly; Type column
-also gets an icon, no color-coding on this tab).
+also gets an icon, no color-coding on this tab), and a "Map" tab
+(visualizing the last 12h of Fire/Medical calls as pins on an interactive
+map).
 
 Self-contained: this repo owns its own fetch scripts, PostgreSQL/PostGIS
 schema, systemd timers, and Home Assistant dashboard/package YAML. It can be
@@ -25,7 +27,7 @@ Two independent fetch scripts, each on its own systemd timer:
 Both then query the last rolling 24h back out of the database and atomically
 rewrite a JSON cache under Home Assistant's `www/` directory.
 `ha/packages/columbia_911.yaml` exposes both caches as `command_line`
-sensors; `ha/lovelace/columbia_911.yaml` renders the two-tab dashboard.
+sensors; `ha/lovelace/columbia_911.yaml` renders the three-tab dashboard.
 
 Each fetch script also computes a `nature_icon` per call — a substring
 keyword match against the `nature` text (e.g. `medical` → 🚑, `fire` → 🔥,
@@ -41,6 +43,25 @@ for every column — in particular `geox`/`geoy`'s coordinate reference system
 (Missouri State Plane Central Zone, NAD83, US Survey Feet — ESRI:102697) and
 how `geom` relates to them (the `pyproj` transform to WGS84/EPSG:4326 done at
 fetch time). Visible via `\d+ fire_medical_calls` in `psql`, not just here.
+
+## Map tab
+
+The Map tab displays Fire/Medical dispatch calls from the last 12 hours as pins
+on an interactive map. Police calls are excluded because the police feed
+contains no coordinates.
+
+The map is implemented as a custom Lovelace card (`ha/www/community/mandi-fire-medical-map/mandi-fire-medical-map-card.js`)
+with Leaflet bundled directly (not a HACS dependency), allowing deployment to
+any Home Assistant instance without additional package management. Both `install.sh`
+and `uninstall.sh` handle the card's deployment and removal, including registering
+it as a Lovelace resource via `.storage/lovelace_resources` (handled automatically
+by `install.sh`'s `register_lovelace_resource()` function). This is distinct from
+the one manual `configuration.yaml` step below, which registers the dashboard
+itself, not the card resource.
+
+The custom card uses a ResizeObserver to ensure the map initializes correctly
+when rendered in Home Assistant's dynamically-sized dashboard tabs, preventing
+the Leaflet rendering bug where the map would lock onto a zero-sized container.
 
 ## Prerequisites
 

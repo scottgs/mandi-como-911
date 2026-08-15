@@ -19,6 +19,25 @@ sudo systemctl daemon-reload
 echo "== 2/3: HA dashboard + package files =="
 rm -f "${HA_CONFIG_DIR}/lovelace/columbia_911.yaml" "${HA_CONFIG_DIR}/packages/columbia_911.yaml"
 
+echo "== fire/medical map card =="
+rm -rf "${HA_CONFIG_DIR}/www/community/mandi-fire-medical-map"
+python3 - "${HA_CONFIG_DIR}/.storage/lovelace_resources" <<'PYEOF'
+import json, sys
+
+path = sys.argv[1]
+with open(path) as f:
+    data = json.load(f)
+before = len(data["data"]["items"])
+data["data"]["items"] = [
+    i for i in data["data"]["items"]
+    if i["url"] != "/local/community/mandi-fire-medical-map/mandi-fire-medical-map-card.js"
+]
+if len(data["data"]["items"]) != before:
+    with open(path, "w") as f:
+        json.dump(data, f)
+    print("removed fire/medical map card lovelace resource")
+PYEOF
+
 echo "== 3/3: manual step reminders =="
 cat <<'EOF'
 Remove the `columbia-911-dashboard` block from homeassistant/config/configuration.yaml,
