@@ -103,6 +103,11 @@ class MandiFireMedicalMapCard extends HTMLElement {
       // noticeable at this scale).
       this._map = window.L.map(this._mapEl, { zoomSnap: 0 });
       this._map.fitBounds(computeHomeBounds(homeLat, homeLon, HOME_VIEW_MILES_ACROSS));
+      // One zoom level in from the computed HOME_VIEW_MILES_ACROSS fit, same
+      // center -- setZoom (not fitBounds) is the precise way to express
+      // "one level in/out" in Leaflet's own terms rather than guessing a new
+      // mile span.
+      this._map.setZoom(this._map.getZoom() + 1);
       window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap contributors",
         maxZoom: 19,
