@@ -27,7 +27,7 @@ Two independent fetch scripts, each on its own systemd timer:
 Both then query the last rolling 24h back out of the database and atomically
 rewrite a JSON cache under Home Assistant's `www/` directory.
 `ha/packages/columbia_911.yaml` exposes both caches as `command_line`
-sensors; `ha/lovelace/columbia_911.yaml` renders the two-tab dashboard.
+sensors; `ha/lovelace/columbia_911.yaml` renders the three-tab dashboard.
 
 Each fetch script also computes a `nature_icon` per call — a substring
 keyword match against the `nature` text (e.g. `medical` → 🚑, `fire` → 🔥,
@@ -53,8 +53,11 @@ contains no coordinates.
 The map is implemented as a custom Lovelace card (`ha/www/community/mandi-fire-medical-map/mandi-fire-medical-map-card.js`)
 with Leaflet bundled directly (not a HACS dependency), allowing deployment to
 any Home Assistant instance without additional package management. Both `install.sh`
-and `uninstall.sh` handle the card's deployment and removal, including Lovelace
-resource registration in `configuration.yaml`.
+and `uninstall.sh` handle the card's deployment and removal, including registering
+it as a Lovelace resource via `.storage/lovelace_resources` (handled automatically
+by `install.sh`'s `register_lovelace_resource()` function). This is distinct from
+the one manual `configuration.yaml` step below, which registers the dashboard
+itself, not the card resource.
 
 The custom card uses a ResizeObserver to ensure the map initializes correctly
 when rendered in Home Assistant's dynamically-sized dashboard tabs, preventing

@@ -85,6 +85,7 @@ class MandiFireMedicalMapCard extends HTMLElement {
     }
 
     const calls = stateObj.attributes.calls || [];
+    const fetchedAt = stateObj.attributes.fetched_at;
     const fetchedDisplay = stateObj.attributes.fetched_at_display || "";
     const now = Date.now();
     const recent = calls.filter((c) => {
@@ -93,9 +94,29 @@ class MandiFireMedicalMapCard extends HTMLElement {
       return !isNaN(t) && now - t <= TWELVE_HOURS_MS && now - t >= 0;
     });
 
-    this._headerEl.textContent = recent.length
-      ? `${recent.length} call${recent.length === 1 ? "" : "s"} in the last 12 hours — updated ${fetchedDisplay}`
-      : `No calls in the last 12 hours — updated ${fetchedDisplay}`;
+    const countText = recent.length
+      ? `${recent.length} call${recent.length === 1 ? "" : "s"} in the last 12 hours`
+      : "No calls in the last 12 hours";
+
+    const ageMin = Math.round((now - Date.parse(fetchedAt)) / 60000);
+    let freshnessHtml;
+    if (!isNaN(ageMin) && ageMin > 20) {
+      freshnessHtml = `<span style="color: #e65100">⚠ Stale — last updated ${escapeHtml(
+        fetchedDisplay
+      )} (${ageMin}m ago)</span>`;
+    } else if (!isNaN(ageMin)) {
+      freshnessHtml = `<span style="color: #757575">Updated ${escapeHtml(
+        fetchedDisplay
+      )} (${ageMin}m ago)</span>`;
+    } else {
+      freshnessHtml = `<span style="color: #757575">Updated ${escapeHtml(fetchedDisplay)}</span>`;
+    }
+
+    this._headerEl.innerHTML = `${escapeHtml(countText)} — ${freshnessHtml}`;
+
+    const dataChanged = fetchedAt !== this._lastRenderedFetchedAt;
+    if (!dataChanged) return;
+    this._lastRenderedFetchedAt = fetchedAt;
 
     this._markersLayer.clearLayers();
     const bounds = [];
