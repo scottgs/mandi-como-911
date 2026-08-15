@@ -25,12 +25,13 @@ python3 - "${HA_CONFIG_DIR}/.storage/lovelace_resources" <<'PYEOF'
 import json, sys
 
 path = sys.argv[1]
+BASE_URL = "/local/community/mandi-fire-medical-map/mandi-fire-medical-map-card.js"
 with open(path) as f:
     data = json.load(f)
 before = len(data["data"]["items"])
 data["data"]["items"] = [
     i for i in data["data"]["items"]
-    if i["url"] != "/local/community/mandi-fire-medical-map/mandi-fire-medical-map-card.js"
+    if i["url"].split("?")[0] != BASE_URL
 ]
 if len(data["data"]["items"]) != before:
     with open(path, "w") as f:

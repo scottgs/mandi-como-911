@@ -38,21 +38,35 @@ SQL
 
 register_lovelace_resource() {
   local ha_config_dir="$1"
-  local resource_url="$2"
-  python3 - "${ha_config_dir}/.storage/lovelace_resources" "$resource_url" <<'PYEOF'
+  local base_url="$2"
+  local resource_url="$3"
+  python3 - "${ha_config_dir}/.storage/lovelace_resources" "$base_url" "$resource_url" <<'PYEOF'
 import json, sys, uuid
 
-path, url = sys.argv[1], sys.argv[2]
+path, base_url, url = sys.argv[1], sys.argv[2], sys.argv[3]
 with open(path) as f:
     data = json.load(f)
 items = data["data"]["items"]
+# Query-string-versioned URL already exactly registered -- true no-op, don't
+# touch the file.
 if any(i["url"] == url for i in items):
     print(f"lovelace resource already registered: {url}")
 else:
+    # Drop any existing entry for this card (any *other* query-string
+    # version) before adding the current one -- keeps the registered URL in
+    # sync with the deployed file's content hash, so browsers with a long
+    # Cache-Control lifetime on /local/ assets (this HA install: 31 days)
+    # are forced to fetch fresh content whenever the file actually changes,
+    # instead of indefinitely serving whatever they first cached at a fixed
+    # unversioned URL.
+    before = len(items)
+    items[:] = [i for i in items if i["url"].split("?")[0] != base_url]
+    removed = before - len(items)
     items.append({"id": uuid.uuid4().hex, "url": url, "type": "module"})
+    suffix = f" (replaced {removed} stale version)" if removed else ""
+    print(f"registered lovelace resource: {url}{suffix}")
     with open(path, "w") as f:
         json.dump(data, f)
-    print(f"registered lovelace resource: {url}")
 PYEOF
 }
 
@@ -94,7 +108,9 @@ echo "== 4b/5: fire/medical map card =="
 mkdir -p "${HA_CONFIG_DIR}/www/community/mandi-fire-medical-map"
 cp "$SCRIPT_DIR/ha/www/community/mandi-fire-medical-map/"*.js "$SCRIPT_DIR/ha/www/community/mandi-fire-medical-map/"*.css \
   "${HA_CONFIG_DIR}/www/community/mandi-fire-medical-map/"
-register_lovelace_resource "${HA_CONFIG_DIR}" "/local/community/mandi-fire-medical-map/mandi-fire-medical-map-card.js"
+CARD_JS_BASE_URL="/local/community/mandi-fire-medical-map/mandi-fire-medical-map-card.js"
+CARD_JS_HASH="$(sha256sum "$SCRIPT_DIR/ha/www/community/mandi-fire-medical-map/mandi-fire-medical-map-card.js" | cut -c1-8)"
+register_lovelace_resource "${HA_CONFIG_DIR}" "${CARD_JS_BASE_URL}" "${CARD_JS_BASE_URL}?v=${CARD_JS_HASH}"
 
 echo "== 5/5: manual step reminder =="
 cat <<'EOF'
